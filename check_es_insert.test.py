@@ -17,10 +17,10 @@ class Calculator(unittest.TestCase):
         my_calculator=check_es_insert.Calculator(warn=5,crit=7)
         result=my_calculator.calculate(old_value=7,new_value=37,old_time=1338558183.7,new_time=1338558193.7)
         self.assertEqual(result,3.0)
-    def printandexit_runner(self,value,expected_code):
+    def printandexit_runner(self,value,expected_code,index='all'):
         my_calculator=check_es_insert.Calculator(warn=7,crit=20)
         (text,exit_code)=my_calculator.printandexit(result=value)
-        self.assertEqual(text,"Number of documents inserted per second is %f | 'es_insert'=%f;7;20;;" % (value,value))
+        self.assertEqual(text,"Number of documents inserted per second (index: %s) is %f | 'es_insert'=%f;7;20;;" % (index,value,value))
         self.assertEqual(exit_code,expected_code)
     def test_printandexit_withOK_returns_expectedTextAndExpectedCode(self):
         '''Given a set of values, it should return the correct exit codes for OK,WARNING,CRITICAL,UNKNOWN, and also the correct text'''
@@ -65,7 +65,7 @@ class Calculator(unittest.TestCase):
         self.mox.StubOutClassWithMocks(check_es_insert,'Elasticsearcher')
         dummy_elasticsearcher = check_es_insert.Elasticsearcher(address='localhost:9200')
         #make it return a value
-        dummy_elasticsearcher.getCurrent().AndReturn(7)
+        dummy_elasticsearcher.getCurrent('').AndReturn(7)
         #mock timer()
         self.mox.StubOutWithMock(check_es_insert,"timer")
         check_es_insert.timer().AndReturn(1338558185.54)
@@ -82,7 +82,7 @@ class Calculator(unittest.TestCase):
         #mock an Elasticsearcher
         dummy_elasticsearcher = check_es_insert.Elasticsearcher(address='localhost:9200')
         #make it raise an exception
-        dummy_elasticsearcher.getCurrent().AndRaise(BaseException("Something nasty happened"))
+        dummy_elasticsearcher.getCurrent('').AndRaise(BaseException("Something nasty happened"))
         #replay the mocks
         self.mox.ReplayAll()
         #now let's test
@@ -96,7 +96,7 @@ class Calculator(unittest.TestCase):
         #mock an Elasticsearcher
         dummy_elasticsearcher = check_es_insert.Elasticsearcher(address='localhost:9200')
         #make it return a value
-        dummy_elasticsearcher.getCurrent().AndReturn(7)
+        dummy_elasticsearcher.getCurrent('').AndReturn(7)
         #mock timer()
         self.mox.StubOutWithMock(check_es_insert,"timer")
         check_es_insert.timer().AndReturn(1338558185.54)
@@ -113,7 +113,7 @@ class Calculator(unittest.TestCase):
         my_calculator=check_es_insert.Calculator(warn=2,crit=3)
         result = my_calculator.run()
         self.assertEqual(result[1],0)
-        self.assertEqual(result[0], "Number of documents inserted per second is %f | 'es_insert'=%f;%d;%d;;" % (0.787402,0.787402,2,3))
+        self.assertEqual(result[0], "Number of documents inserted per second (index: %s) is %f | 'es_insert'=%f;%d;%d;;" % ('all',0.787402,0.787402,2,3))
 
     def test_run_writeCurrentThrowsException_shouldExitWithUnknown(self):
         '''If it can't write the current results to the file, it should return UNKNOWN to alert the user'''
@@ -121,7 +121,7 @@ class Calculator(unittest.TestCase):
         #mock an Elasticsearcher
         dummy_elasticsearcher = check_es_insert.Elasticsearcher(address='localhost:9200')
         #make it return a value
-        dummy_elasticsearcher.getCurrent().AndReturn(7)
+        dummy_elasticsearcher.getCurrent('').AndReturn(7)
         #mock timer()
         self.mox.StubOutWithMock(check_es_insert,"timer")
         check_es_insert.timer().AndReturn(1338558185.54)
@@ -146,7 +146,7 @@ class Calculator(unittest.TestCase):
         #mock an Elasticsearcher
         dummy_elasticsearcher = check_es_insert.Elasticsearcher(address='localhost:9200')
         #make it return a value
-        dummy_elasticsearcher.getCurrent().AndRaise(BaseException("Something bad happened"))
+        dummy_elasticsearcher.getCurrent('').AndRaise(BaseException("Something bad happened"))
         #replay all mocks
         self.mox.ReplayAll()
         #now let's test
@@ -161,7 +161,7 @@ class Calculator(unittest.TestCase):
         #mock an Elasticsearcher
         dummy_elasticsearcher = check_es_insert.Elasticsearcher(address='localhost:9200')
         #make it return a value
-        dummy_elasticsearcher.getCurrent().AndReturn(7)
+        dummy_elasticsearcher.getCurrent('').AndReturn(7)
         #mock timer()
         self.mox.StubOutWithMock(check_es_insert,"timer")
         check_es_insert.timer().AndReturn(1338558185.54)
@@ -249,11 +249,11 @@ class Main(unittest.TestCase):
         #mock the argument parser
         m.StubOutWithMock(check_es_insert,"getArgs")
         #expect to return the needed stuff
-        check_es_insert.getArgs('Nagios plugin for checking the number of inserts per second in Elasticsearch').AndReturn({ 'critical' : 3, 'warning' : 2, 'address' : 'myhost:1234', 'file' : '/tmp/bla'})
+        check_es_insert.getArgs('Nagios plugin for checking the number of inserts per second in Elasticsearch').AndReturn({ 'critical' : 3, 'warning' : 2, 'address' : 'myhost:1234', 'file' : '/tmp/bla', 'index' : 'articles' })
         #mock a calculator
         m.StubOutClassWithMocks(check_es_insert,'Calculator')
         #mock a Calculator
-        dummy_calculator = check_es_insert.Calculator(warn=2, crit=3,myfile='/tmp/bla',myaddress='myhost:1234')
+        dummy_calculator = check_es_insert.Calculator(warn=2, crit=3,myfile='/tmp/bla',myaddress='myhost:1234',index='articles')
         #make run() return foo and 3
         dummy_calculator.run().AndReturn(("foo",3))
         #mock printer()
