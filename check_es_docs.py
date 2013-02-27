@@ -13,7 +13,7 @@ def main():
     #get my command-line arguments
     cmdline = check_es_insert.getArgs('Nagios plugin for checking the total number of documents stored in Elasticsearch')
     #make a calculator
-    my_calc = check_es_insert.Calculator(warn=cmdline['warning'],crit=cmdline['critical'],myfile=cmdline['file'],myaddress=cmdline['address'],index=cmdline['index'])
+    my_calc = check_es_insert.Calculator(warn=cmdline['warning'],crit=cmdline['critical'],myfile=cmdline['file'],myaddress=cmdline['address'],threshold=cmdline['threshold'],index=cmdline['index'])
     #get the current number of documents from Elasticsearch
     (result,time) = my_calc.getCurrent()
     #if there's an error, exit with UNKNOWN

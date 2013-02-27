@@ -249,11 +249,11 @@ class Main(unittest.TestCase):
         #mock the argument parser
         m.StubOutWithMock(check_es_insert,"getArgs")
         #expect to return the needed stuff
-        check_es_insert.getArgs('Nagios plugin for checking the number of inserts per second in Elasticsearch').AndReturn({ 'critical' : 3, 'warning' : 2, 'address' : 'myhost:1234', 'file' : '/tmp/bla', 'index' : 'articles' })
+        check_es_insert.getArgs('Nagios plugin for checking the number of inserts per second in Elasticsearch').AndReturn({ 'critical' : 3, 'warning' : 2, 'address' : 'myhost:1234', 'file' : '/tmp/bla', 'threshold' : 'lt', 'index' : 'articles' })
         #mock a calculator
         m.StubOutClassWithMocks(check_es_insert,'Calculator')
         #mock a Calculator
-        dummy_calculator = check_es_insert.Calculator(warn=2, crit=3,myfile='/tmp/bla',myaddress='myhost:1234',index='articles')
+        dummy_calculator = check_es_insert.Calculator(warn=2, crit=3,myfile='/tmp/bla',myaddress='myhost:1234',threshold='lt',index='articles')
         #make run() return foo and 3
         dummy_calculator.run().AndReturn(("foo",3))
         #mock printer()

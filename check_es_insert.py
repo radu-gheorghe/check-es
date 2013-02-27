@@ -13,11 +13,12 @@ UNKNOWN=3
 class Calculator():
     '''This is our main class. It takes results from Elasticsearch and from what was previously recorded
     and can give the text to be printed and the exit code'''
-    def __init__(self,warn,crit,myfile='/tmp/check_es_insert',myaddress='localhost:9200',index=''):
+    def __init__(self,warn,crit,myfile='/tmp/check_es_insert',myaddress='localhost:9200',threshold='lt',index=''):
         self.warn = warn
         self.crit = crit
         self.my_elasticsearcher = Elasticsearcher(address=myaddress)
         self.my_disker = Disker(file=myfile)
+        self.threshold = threshold
         self.index = index
     def calculate(self,old_value,new_value,old_time,new_time):
         '''Calculates the number of inserts per second since the last recording'''
@@ -43,12 +44,23 @@ class Calculator():
     def printandexit(self,result):
         '''Given the number of inserts per second, it gives the formatted text and the exit code'''
         text="Number of documents inserted per second (index: %s) is %f | 'es_insert'=%f;%d;%d;;" % (self.index if self.index != '' else 'all', result,result,self.warn,self.crit)
-        if result<self.warn:
-            return (text,OK)
-        if result<self.crit:
-            return (text,WARNING)
+        if self.threshold == 'lt':
+          if result<self.warn:
+              return (text,OK)
+          if result<self.crit:
+              return (text,WARNING)
+          else:
+              return (text,CRITICAL)
+        elif self.threshold == 'gt':
+          if result<self.crit:
+              return (text,CRITICAL)
+          if result<self.warn:
+              return (text,WARNING)
+          else:
+              return (text,OK)
         else:
-            return (text,CRITICAL)
+          return ('Unknown threshold value',UNKNOWN)
+
     def run(self):
         '''This does everything, and returns the text to be printed and the exit code'''
         #get the current number of documents and time
@@ -120,6 +132,7 @@ def getArgs(helptext):
     parser = argparse.ArgumentParser(description=helptext)
     parser.add_argument('-c','--critical', type=int, help='Critical value', action='store',required=True)
     parser.add_argument('-w','--warning', type=int, help='Warning value', action='store',required=True)
+    parser.add_argument('-t','--threshold', choices=['lt','gt'], type=str, help='Check result less than (lt) or greater than (gt) the warning/critcal values', action='store',default='lt')
     parser.add_argument('-a','--address', type=str, help='Elasticsearch address', action='store',default='localhost:9200')
     parser.add_argument('-i','--index', type=str, help='Elasticsearch index', action='store',default='')
     parser.add_argument('-f','--file', type=str, help='Where to store gathered data', action='store',default='/tmp/check_es_insert')
@@ -132,7 +145,7 @@ def main():
           cmdline['file'] = '/tmp/check_es_insert_' + cmdline['index']
     #print cmdline
     #exit()
-    my_calculator = Calculator(warn=cmdline['warning'],crit=cmdline['critical'],myfile=cmdline['file'],myaddress=cmdline['address'],index=cmdline['index'])
+    my_calculator = Calculator(warn=cmdline['warning'],crit=cmdline['critical'],myfile=cmdline['file'],myaddress=cmdline['address'],threshold=cmdline['threshold'],index=cmdline['index'])
     (text,exitcode) = my_calculator.run()
     printer(text)
     exiter(exitcode)
