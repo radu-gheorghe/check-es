@@ -13,11 +13,12 @@ UNKNOWN=3
 class Calculator():
     '''This is our main class. It takes results from Elasticsearch and from what was previously recorded
     and can give the text to be printed and the exit code'''
-    def __init__(self,warn,crit,myfile='/tmp/check_es_insert',myaddress='localhost:9200'):
+    def __init__(self,warn,crit,myfile='/tmp/check_es_insert',myaddress='localhost:9200',index=''):
         self.warn = warn
         self.crit = crit
         self.my_elasticsearcher = Elasticsearcher(address=myaddress)
         self.my_disker = Disker(file=myfile)
+        self.index = index
     def calculate(self,old_value,new_value,old_time,new_time):
         '''Calculates the number of inserts per second since the last recording'''
         return (new_value - old_value)/(new_time - old_time)
@@ -33,7 +34,7 @@ class Calculator():
     def getCurrent(self):
         '''Gets current number of documents and current UNIX time'''
         try:
-            current_result = self.my_elasticsearcher.getCurrent()
+            current_result = self.my_elasticsearcher.getCurrent(self.index)
         except:
             #-1 is an error code. In case shit goes wrong while interrogating Elasticsearch
             return (-1,0)
@@ -41,7 +42,7 @@ class Calculator():
         return (current_result,current_time)
     def printandexit(self,result):
         '''Given the number of inserts per second, it gives the formatted text and the exit code'''
-        text="Number of documents inserted per second is %f | 'es_insert'=%f;%d;%d;;" % (result,result,self.warn,self.crit)
+        text="Number of documents inserted per second (index: %s) is %f | 'es_insert'=%f;%d;%d;;" % (self.index if self.index != '' else 'all', result,result,self.warn,self.crit)
         if result<self.warn:
             return (text,OK)
         if result<self.crit:
@@ -106,11 +107,12 @@ class Elasticsearcher():
     def __init__(self,address='localhost:9200'):
         self.address = address
         self.mysum = 0
-    def getCurrent(self):
+    def getCurrent(self, index=''):
         conn = pyes.ES([self.address])
         status = conn.status()
-        for index in status['indices'].iterkeys():
-            self.mysum = self.mysum + status['indices'][index]['docs']['num_docs']
+        for es_index in status['indices'].iterkeys():
+            if index == es_index or index == "":
+                self.mysum = self.mysum + status['indices'][es_index]['docs']['num_docs']
         return self.mysum
 
 def getArgs(helptext):
@@ -119,15 +121,18 @@ def getArgs(helptext):
     parser.add_argument('-c','--critical', type=int, help='Critical value', action='store',required=True)
     parser.add_argument('-w','--warning', type=int, help='Warning value', action='store',required=True)
     parser.add_argument('-a','--address', type=str, help='Elasticsearch address', action='store',default='localhost:9200')
+    parser.add_argument('-i','--index', type=str, help='Elasticsearch index', action='store',default='')
     parser.add_argument('-f','--file', type=str, help='Where to store gathered data', action='store',default='/tmp/check_es_insert')
     return vars(parser.parse_args())
 
 def main():
     '''The main function'''
     cmdline = getArgs('Nagios plugin for checking the number of inserts per second in Elasticsearch')
+    if cmdline['file'] == '/tmp/check_es_insert' and cmdline['index'] != '':
+          cmdline['file'] = '/tmp/check_es_insert_' + cmdline['index']
     #print cmdline
     #exit()
-    my_calculator = Calculator(warn=cmdline['warning'],crit=cmdline['critical'],myfile=cmdline['file'],myaddress=cmdline['address'])
+    my_calculator = Calculator(warn=cmdline['warning'],crit=cmdline['critical'],myfile=cmdline['file'],myaddress=cmdline['address'],index=cmdline['index'])
     (text,exitcode) = my_calculator.run()
     printer(text)
     exiter(exitcode)

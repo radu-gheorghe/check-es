@@ -13,11 +13,11 @@ class Main(unittest.TestCase):
         #expect to be called properly and return some command-line options
         check_es_insert.getArgs(\
             'Nagios plugin for checking the total number of documents stored in Elasticsearch')\
-            .AndReturn({ 'critical' : 7, 'warning' : 5, 'address' : 'myhost:1234', 'file' : '/tmp/bla'})
+            .AndReturn({ 'critical' : 7, 'warning' : 5, 'address' : 'myhost:1234', 'file' : '/tmp/bla', 'index' : '' })
         #mock a Calculator instance
         m.StubOutClassWithMocks(check_es_insert,'Calculator')
         #mock a dummy Calculator
-        dummy_calculator=check_es_insert.Calculator(warn=5,crit=7,myaddress='myhost:1234', myfile='/tmp/bla')
+        dummy_calculator=check_es_insert.Calculator(warn=5,crit=7,myaddress='myhost:1234', myfile='/tmp/bla', index='')
         #make getCurrent return -1
         dummy_calculator.getCurrent().AndReturn((-1,1338558185.54))
         #mock printer()
@@ -45,11 +45,11 @@ class Main(unittest.TestCase):
         #expect to be called properly and return some command-line options
         check_es_insert.getArgs(\
             'Nagios plugin for checking the total number of documents stored in Elasticsearch')\
-            .AndReturn({ 'critical' : 7, 'warning' : 5, 'address' : 'myhost:1234', 'file' : '/tmp/bla'})
+            .AndReturn({ 'critical' : 7, 'warning' : 5, 'address' : 'myhost:1234', 'file' : '/tmp/bla', 'index' : '' })
         #mock a Calculator instance
         m.StubOutClassWithMocks(check_es_insert,'Calculator')
         #mock a dummy Calculator
-        dummy_calculator=check_es_insert.Calculator(warn=5,crit=7,myaddress='myhost:1234', myfile='/tmp/bla')
+        dummy_calculator=check_es_insert.Calculator(warn=5,crit=7,myaddress='myhost:1234', myfile='/tmp/bla', index='')
         #make getCurrent return -1
         dummy_calculator.getCurrent().AndReturn((3,1338558185.54))
         #make printandexit expect to be called with the result and return something
@@ -57,7 +57,7 @@ class Main(unittest.TestCase):
         #mock printer()
         m.StubOutWithMock(check_es_insert,"printer")
         #expect to print "Can't get number of documents from Elasticsearch"
-        check_es_insert.printer("Total number of documents in Elasticsearch is %d | 'es_docs'=%d;%d;%d;;" % (3,3,5,7))
+        check_es_insert.printer("Total number of documents in Elasticsearch (index: %s) is %d | 'es_docs'=%d;%d;%d;;" % ('all',3,3,5,7))
         #mock exiter()
         m.StubOutWithMock(check_es_insert,"exiter")
         #expect to exit with 2
