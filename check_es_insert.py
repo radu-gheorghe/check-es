@@ -121,7 +121,7 @@ class Elasticsearcher():
         self.mysum = 0
     def getCurrent(self, index=''):
         conn = pyes.ES([self.address])
-        status = conn.status()
+        status = conn.indices.status()
         for es_index in status['indices'].iterkeys():
             if index == es_index or index == "":
                 self.mysum = self.mysum + status['indices'][es_index]['docs']['num_docs']
