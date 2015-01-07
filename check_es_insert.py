@@ -130,8 +130,8 @@ class Elasticsearcher():
 def getArgs(helptext):
     '''Here's where we get our command line arguments'''
     parser = argparse.ArgumentParser(description=helptext)
-    parser.add_argument('-c','--critical', type=int, help='Critical value', action='store',required=True)
-    parser.add_argument('-w','--warning', type=int, help='Warning value', action='store',required=True)
+    parser.add_argument('-c','--critical', type=float, help='Critical value', action='store',required=True)
+    parser.add_argument('-w','--warning', type=float, help='Warning value', action='store',required=True)
     parser.add_argument('-t','--threshold', choices=['lt','gt'], type=str, help='Check result less than (lt) or greater than (gt) the warning/critcal values', action='store',default='lt')
     parser.add_argument('-a','--address', type=str, help='Elasticsearch address', action='store',default='localhost:9200')
     parser.add_argument('-i','--index', type=str, help='Elasticsearch index', action='store',default='')
