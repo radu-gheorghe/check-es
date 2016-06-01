@@ -1,7 +1,8 @@
 #!/usr/bin/python
 
 from __future__ import division
-import sys,time,pyes,argparse
+import sys,time,argparse
+from elasticsearch import Elasticsearch
 
 ###CONSTANTS###
 OK=0
@@ -67,7 +68,7 @@ class Calculator():
         (new_value, new_time) = self.getCurrent()
         #check if the result is a known error code
         if new_value == -1:
-            text = "There was an issue getting the status - and number of docs - from Elasticsearch. Check that ES is running and you have pyes installed"
+            text = "There was an issue getting the status - and number of docs - from Elasticsearch. Check that ES is running and you have elasticsearch python module installed"
             return (text,UNKNOWN)
         #get the previous number of documents and time
         (old_value, old_time) = self.getPrevious()
@@ -120,12 +121,10 @@ class Elasticsearcher():
         self.address = address
         self.mysum = 0
     def getCurrent(self, index=''):
-        conn = pyes.ES([self.address])
-        status = conn.indices.status()
-        for es_index in status['indices'].iterkeys():
-            if index == es_index or index == "":
-                self.mysum = self.mysum + status['indices'][es_index]['docs']['num_docs']
-        return self.mysum
+        (esaddress, esport) = self.address.split(':')
+        conn = Elasticsearch([{'host': esaddress, 'port': esport}])
+        res = conn.search(index=index)
+        return res['hits']['total']
 
 def getArgs(helptext):
     '''Here's where we get our command line arguments'''
