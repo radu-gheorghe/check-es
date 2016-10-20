@@ -122,7 +122,7 @@ class Elasticsearcher():
         self.mysum = 0
     def getCurrent(self, index=''):
         (esaddress, esport) = self.address.split(':')
-        conn = Elasticsearch([{'host': esaddress, 'port': esport}])
+        conn = Elasticsearch([{'host': esaddress, 'port': esport, 'timeout': 30}])
         res = conn.search(index=index)
         return res['hits']['total']
 
