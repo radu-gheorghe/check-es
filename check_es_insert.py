@@ -14,16 +14,20 @@ UNKNOWN=3
 class Calculator():
     '''This is our main class. It takes results from Elasticsearch and from what was previously recorded
     and can give the text to be printed and the exit code'''
-    def __init__(self,warn,crit,myfile='/tmp/check_es_insert',myaddress='localhost:9200',threshold='lt',index=''):
+    def __init__(self,warn,crit,myfile='/tmp/check_es_insert',myaddress='localhost:9200',threshold='lt',index='', minutes = False):
         self.warn = warn
         self.crit = crit
         self.my_elasticsearcher = Elasticsearcher(address=myaddress)
         self.my_disker = Disker(file=myfile)
         self.threshold = threshold
         self.index = index
+        self.minutes = minutes
     def calculate(self,old_value,new_value,old_time,new_time):
-        '''Calculates the number of inserts per second since the last recording'''
-        return (new_value - old_value)/(new_time - old_time)
+        '''Calculates the number of inserts per second or minute since the last recording'''
+        if self.minutes:
+            return (new_value - old_value)/(new_time - old_time) * 60
+        else:
+            return (new_value - old_value) / (new_time - old_time)
     def getPrevious(self):
         '''Gets the previously recorded number of documents and UNIX time'''
         try:
@@ -44,7 +48,10 @@ class Calculator():
         return (current_result,current_time)
     def printandexit(self,result):
         '''Given the number of inserts per second, it gives the formatted text and the exit code'''
-        text="Number of documents inserted per second (index: %s) is %f | 'es_insert'=%f;%d;%d;;" % (self.index if self.index != '' else 'all', result,result,self.warn,self.crit)
+        if self.minutes:
+            text="Number of documents inserted per minute (index: %s) is %f | 'es_insert'=%f;%d;%d;;" % (self.index if self.index != '' else 'all', result,result,self.warn,self.crit)
+        else:
+            text = "Number of documents inserted per second (index: %s) is %f | 'es_insert'=%f;%d;%d;;" % (self.index if self.index != '' else 'all', result, result, self.warn, self.crit)
         if self.threshold == 'lt':
           if result<self.warn:
               return (text,OK)
@@ -135,6 +142,7 @@ def getArgs(helptext):
     parser.add_argument('-a','--address', type=str, help='Elasticsearch address', action='store',default='localhost:9200')
     parser.add_argument('-i','--index', type=str, help='Elasticsearch index', action='store',default='')
     parser.add_argument('-f','--file', type=str, help='Where to store gathered data', action='store',default='/tmp/check_es_insert')
+    parser.add_argument('-m','--minutes', help='Calc events by per minute', action='store_true' , default=False)
     return vars(parser.parse_args())
 
 def main():
@@ -144,7 +152,7 @@ def main():
           cmdline['file'] = '/tmp/check_es_insert_' + cmdline['index']
     #print cmdline
     #exit()
-    my_calculator = Calculator(warn=cmdline['warning'],crit=cmdline['critical'],myfile=cmdline['file'],myaddress=cmdline['address'],threshold=cmdline['threshold'],index=cmdline['index'])
+    my_calculator = Calculator(warn=cmdline['warning'],crit=cmdline['critical'],myfile=cmdline['file'],myaddress=cmdline['address'],threshold=cmdline['threshold'],index=cmdline['index'],minutes=cmdline['minutes'])
     (text,exitcode) = my_calculator.run()
     printer(text)
     exiter(exitcode)
